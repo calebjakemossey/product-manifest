@@ -1,35 +1,41 @@
 # Product Manifest
 
-Coordinates product releases across packages, defines hardware variants, and produces deployment artefacts.
+[![Validate](https://github.com/calebjakemossey/product-manifest/actions/workflows/validate.yaml/badge.svg)](https://github.com/calebjakemossey/product-manifest/actions/workflows/validate.yaml)
+
+Coordinates product releases across packages, defines hardware variants, and produces deployment artefacts. This repository is the single source of truth for what software runs on each robot.
 
 ## Architecture
 
 ```mermaid
 %%{init: {'theme': 'dark', 'flowchart': {'curve': 'linear'}}}%%
-flowchart LR
-    subgraph Manifests
-        V1[v1/manifest.repos]
-        V2[v2/manifest.repos]
+graph TB
+    classDef primary fill:#2d5986,stroke:#4a90d9,stroke-width:1px,color:#e0e0e0,rx:8,ry:8
+    classDef secondary fill:#1a3a5c,stroke:#3d7ab5,stroke-width:1px,color:#e0e0e0,rx:8,ry:8
+    classDef accent fill:#2d7d46,stroke:#4caf50,stroke-width:1px,color:#e0e0e0,rx:8,ry:8
+    classDef highlight fill:#8b5e3c,stroke:#d4956b,stroke-width:1px,color:#e0e0e0,rx:8,ry:8
+
+    subgraph "Variant Manifests"
+        V1[v1/manifest.repos<br/>LiDAR + RGB + supersonic]:::primary
+        V2[v2/manifest.repos<br/>Depth camera + RGB]:::primary
     end
 
-    subgraph CI["CI Validation (per-variant build matrix)"]
-        B1[Build v1]
-        B2[Build v2]
-        T1[Test v1]
-        T2[Test v2]
+    subgraph "CI Validation (per-variant matrix)"
+        B1[Build v1]:::secondary
+        T1[Test v1]:::secondary
+        B2[Build v2]:::secondary
+        T2[Test v2]:::secondary
+        INT[integration-test<br/>placeholder]:::highlight
     end
 
-    subgraph Release
-        TAG[Tag v*]
-        IMG1[v1 Image]
-        IMG2[v2 Image]
-        GHCR[GHCR]
+    subgraph "Tag-Driven Release"
+        TAG[Tag v*]:::accent
+        IMG1[robot-software:v*-v1]:::accent
+        IMG2[robot-software:v*-v2]:::accent
+        GHCR[GHCR]:::accent
     end
 
-    V1 --> B1 --> T1
-    V2 --> B2 --> T2
-    T1 --> TAG
-    T2 --> TAG
+    V1 --> B1 --> T1 --> INT
+    V2 --> B2 --> T2 --> INT
     TAG --> IMG1 --> GHCR
     TAG --> IMG2 --> GHCR
 ```
@@ -46,7 +52,7 @@ flowchart LR
 - `v2.1.0-v1` - builds and pushes only the **v1** variant image
 - `v2.1.0-v2` - builds and pushes only the **v2** variant image
 
-Re-pushing a tag (delete and re-create) overwrites the corresponding image(s) in GHCR. There is no manual dispatch - all releases are driven by tags.
+A GitHub Release is created automatically with Docker pull commands for each variant built and a package versions table extracted from the manifests.
 
 ## Asynchronous Development
 
@@ -73,7 +79,7 @@ variants/
     README.md             # v2 variant documentation
 ```
 
-Each variant is a self-contained directory. Adding a new variant means creating a new directory with a `manifest.repos`, `config/`, and `README.md`.
+Each variant is a self-contained directory. Adding a new variant means creating a new directory with a `manifest.repos`, `config/`, and `README.md` - the CI and release workflows discover it automatically.
 
 ## Cutting a Release
 
