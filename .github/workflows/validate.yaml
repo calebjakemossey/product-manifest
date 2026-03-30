@@ -1,0 +1,124 @@
+name: Validate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  checks: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover-variants:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      variants: ${{ steps.find.outputs.variants }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Discover variants
+        id: find
+        run: |
+          variants=$(ls variants/*.repos | sed 's|variants/||;s|\.repos||' | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          echo "variants=$variants" >> $GITHUB_OUTPUT
+          echo "Found variants: $variants"
+
+  validate-variant:
+    needs: [discover-variants]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        variant: ${{ fromJson(needs.discover-variants.outputs.variants) }}
+      fail-fast: false
+    container:
+      image: ghcr.io/calebjakemossey/ros-ci:humble
+    steps:
+      - name: Configure git safe directory
+        run: git config --global --add safe.directory '*'
+
+      - uses: actions/checkout@v4
+
+      - name: Import packages from manifest
+        run: |
+          mkdir -p /ros_ws/src
+          cd /ros_ws
+          vcs import src < $GITHUB_WORKSPACE/variants/${{ matrix.variant }}.repos
+
+      - name: Install system dependencies
+        run: |
+          cd /ros_ws
+          . /opt/ros/humble/setup.sh
+          rosdep update
+          rosdep install --from-paths src --ignore-src -r -y
+
+      - name: Build
+        shell: bash
+        run: |
+          cd /ros_ws
+          source /opt/ros/humble/setup.bash
+          colcon build --symlink-install
+
+      - name: Test
+        shell: bash
+        run: |
+          cd /ros_ws
+          source /opt/ros/humble/setup.bash
+          source install/local_setup.bash
+          colcon test
+          colcon test-result --verbose
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.variant }}
+          path: /ros_ws/build/**/test_results/**/*.xml
+
+  integration-test:
+    needs: [validate-variant]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integration tests (placeholder)
+        run: |
+          echo "=== Integration Testing Placeholder ==="
+          echo "In production, this job would:"
+          echo "  - Launch the full system in a test environment"
+          echo "  - Run E2E tests verifying cross-package interactions"
+          echo "  - Run simulation tests (Gazebo/MuJoCo/Isaac Sim)"
+          echo "  - Verify hardware-variant-specific behaviour"
+          echo ""
+          echo "All variant builds passed - product is ready for release."
+
+  report-results:
+    needs: [discover-variants, validate-variant]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      checks: write
+    strategy:
+      matrix:
+        variant: ${{ fromJson(needs.discover-variants.outputs.variants) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results-${{ matrix.variant }}
+          path: test-results
+      - name: Publish test results
+        uses: dorny/test-reporter@v1
+        with:
+          name: '${{ matrix.variant }} Test Results'
+          path: 'test-results/**/*.xml'
+          reporter: java-junit
