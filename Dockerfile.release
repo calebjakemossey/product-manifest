@@ -19,7 +19,7 @@ WORKDIR /ros_ws
 
 # Copy the variant manifest and clone all packages
 COPY variants/${VARIANT}/manifest.repos manifest.repos
-RUN vcs import src < manifest.repos
+RUN mkdir -p src && vcs import src < manifest.repos
 
 # Install system dependencies and build
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
