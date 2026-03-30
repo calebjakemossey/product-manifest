@@ -4,6 +4,43 @@
 
 Coordinates product releases across packages, defines hardware variants, and produces deployment artefacts. This repository is the single source of truth for what software runs on each robot.
 
+## Assignment Deliverables
+
+This repository serves as the entry point for the assignment submission. All deliverable documents are here alongside the working infrastructure.
+
+### Challenge 1: CI/CD Pipeline
+
+| Document | Description |
+|----------|-------------|
+| [overview.md](overview.md) | Solution overview - architecture, requirements coverage, CI pipeline design, release model, E2E test results, future improvements |
+| [files.md](files.md) | Complete listing of all files added across all four repositories |
+| [access.md](access.md) | Repository URLs, CI pipeline links, Docker image pull commands, demo PR links, verification instructions |
+
+### Challenge 3: Hybrid Fleet Deployment
+
+| Document | Description |
+|----------|-------------|
+| [bonus_hybrid_fleet_deployment.md](bonus_hybrid_fleet_deployment.md) | Deployment architecture for a hybrid robot fleet - blue/green deployment, promotion pipeline, AI model deployment, security, monitoring, fleet management |
+
+### Repositories
+
+| Repository | Purpose |
+|-----------|---------|
+| [product-manifest](https://github.com/calebjakemossey/product-manifest) | Product release coordination, hardware variants, deliverable documents (this repo) |
+| [ci-workflows](https://github.com/calebjakemossey/ci-workflows) | Shared CI infrastructure - Docker images, reusable release workflow |
+| [assignment_example_pkg](https://github.com/calebjakemossey/assignment_example_pkg) | ROS-independent Python library |
+| [assignment_example_ros_pkg](https://github.com/calebjakemossey/assignment_example_ros_pkg) | ROS2 workspace with nodes, services, and actions |
+
+### Key Links
+
+| What | Link |
+|------|------|
+| Demo failing PR (CI catches regression) | [PR #23](https://github.com/calebjakemossey/assignment_example_ros_pkg/pull/23) |
+| Product release with bill of materials | [v1.0.0](https://github.com/calebjakemossey/product-manifest/releases/tag/v1.0.0) |
+| Package release | [v1.0.1](https://github.com/calebjakemossey/assignment_example_ros_pkg/releases/tag/v1.0.1) |
+
+---
+
 ## Architecture
 
 ```mermaid
