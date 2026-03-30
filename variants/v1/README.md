@@ -16,9 +16,9 @@ The `config/` directory holds v1-specific:
 
 ## Releasing This Variant
 
-To release only v1 (without rebuilding v2), use manual dispatch:
-```
-gh workflow run release.yaml --field version=v2.1.0 --field variants=v1
+To release only v1 (without rebuilding v2), use a tag with the `-v1` suffix:
+```bash
+git tag v2.1.0-v1 && git push origin v2.1.0-v1
 ```
 
-A full product release (tagging the manifest) builds all variants.
+A full product release tag without a suffix (e.g. `v2.1.0`) builds all variants including this one.
