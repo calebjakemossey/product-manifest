@@ -4,7 +4,7 @@ A complete list of all files added or modified across the four repositories.
 
 ## ci-workflows
 
-Shared CI/CD infrastructure: Docker images, reusable release workflow, and deliverable documents.
+Shared CI/CD infrastructure: Docker images and reusable release workflow.
 
 | File | Description |
 |------|-------------|
@@ -16,9 +16,6 @@ Shared CI/CD infrastructure: Docker images, reusable release workflow, and deliv
 | `.github/pull_request_template.md` | PR template with checklist |
 | `CONTRIBUTING.md` | How to modify workflows and test changes |
 | `README.md` | Architecture documentation with mermaid diagrams |
-| `overview.md` | Deliverable: solution overview, requirements coverage, architecture, E2E results, future improvements |
-| `files.md` | Deliverable: this file |
-| `access.md` | Deliverable: repository URLs, CI pipeline links, Docker image pull commands, demo PR links |
 
 ## assignment_example_pkg
 
@@ -89,4 +86,8 @@ Product release coordination: variant manifests, integration testing, deployment
 | `.github/CODEOWNERS` | Assigns repository owner as reviewer |
 | `.github/pull_request_template.md` | PR template with variant checklist |
 | `CONTRIBUTING.md` | How to bump versions, add variants, cut releases |
-| `README.md` | Architecture, variant structure, release process |
+| `README.md` | Architecture, variant structure, release process, assignment entry point |
+| `overview.md` | Challenge 1 deliverable: solution overview, requirements coverage, architecture, E2E test results, future improvements |
+| `files.md` | Challenge 1 deliverable: this file - complete listing of all files across all repos |
+| `access.md` | Challenge 1 deliverable: repository URLs, CI pipeline links, Docker images, demo PRs, verification instructions |
+| `bonus_hybrid_fleet_deployment.md` | Challenge 3 deliverable: hybrid fleet deployment architecture - blue/green, promotion pipeline, model deployment, security, monitoring, fleet management |
