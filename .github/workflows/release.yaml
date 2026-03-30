@@ -3,15 +3,6 @@ name: Release
 on:
   push:
     tags: ['v*']
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version tag (e.g. v2.1.0)'
-        required: true
-      variants:
-        description: 'Variants to build (comma-separated, e.g. "v1" or "v1,v2")'
-        required: false
-        default: ''
 
 permissions:
   contents: read
@@ -21,44 +12,45 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
-  discover-variants:
+  parse-tag:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     outputs:
-      variants: ${{ steps.find.outputs.variants }}
-      version: ${{ steps.version.outputs.version }}
+      version: ${{ steps.parse.outputs.version }}
+      variants: ${{ steps.parse.outputs.variants }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Determine version
-        id: version
+      - name: Parse tag for version and variant
+        id: parse
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "version=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
-          else
-            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          fi
+          TAG="${GITHUB_REF_NAME}"
 
-      - name: Discover variants
-        id: find
-        run: |
-          if [ -n "${{ github.event.inputs.variants }}" ]; then
-            # Manual dispatch: use specified variants
-            variants=$(echo "${{ github.event.inputs.variants }}" | tr ',' '\n' | jq -R -s -c 'split("\n") | map(select(. != ""))')
-          else
-            # Tag push: build all variants
-            variants=$(ls variants/*/manifest.repos | sed 's|variants/||;s|/manifest.repos||' | jq -R -s -c 'split("\n") | map(select(. != ""))')
-          fi
-          echo "variants=$variants" >> $GITHUB_OUTPUT
-          echo "Building variants: $variants"
+          # Check if tag ends with a known variant suffix
+          for variant_dir in variants/*/; do
+            variant=$(basename "$variant_dir")
+            if [[ "$TAG" == *"-${variant}" ]]; then
+              version="${TAG%-${variant}}"
+              echo "version=$version" >> $GITHUB_OUTPUT
+              echo "variants=[\"${variant}\"]" >> $GITHUB_OUTPUT
+              echo "Tag '$TAG' targets variant '$variant' at version '$version'"
+              exit 0
+            fi
+          done
+
+          # No variant suffix: release all variants
+          all_variants=$(ls -d variants/*/ | xargs -I{} basename {} | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          echo "version=$TAG" >> $GITHUB_OUTPUT
+          echo "variants=$all_variants" >> $GITHUB_OUTPUT
+          echo "Tag '$TAG' is a full release of all variants: $all_variants"
 
   build-variant:
-    needs: [discover-variants]
+    needs: [parse-tag]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       matrix:
-        variant: ${{ fromJson(needs.discover-variants.outputs.variants) }}
+        variant: ${{ fromJson(needs.parse-tag.outputs.variants) }}
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -80,7 +72,7 @@ jobs:
             ROS_DISTRO=humble
             VARIANT=${{ matrix.variant }}
           tags: |
-            ghcr.io/${{ github.repository_owner }}/robot-software:${{ needs.discover-variants.outputs.version }}-${{ matrix.variant }}
+            ghcr.io/${{ github.repository_owner }}/robot-software:${{ needs.parse-tag.outputs.version }}-${{ matrix.variant }}
             ghcr.io/${{ github.repository_owner }}/robot-software:latest-${{ matrix.variant }}
           cache-from: type=gha,scope=${{ matrix.variant }}
           cache-to: type=gha,scope=${{ matrix.variant }},mode=max
