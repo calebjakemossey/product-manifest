@@ -1,0 +1,36 @@
+ARG ROS_DISTRO=humble
+FROM ros:${ROS_DISTRO}
+
+ARG VARIANT=v1
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install build tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-pip \
+    python3-vcstool \
+    python3-colcon-common-extensions \
+    python3-rosdep \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN rosdep init || true && rosdep update
+
+WORKDIR /ros_ws
+
+# Copy the variant manifest and clone all packages
+COPY variants/${VARIANT}.repos manifest.repos
+RUN vcs import src < manifest.repos
+
+# Install system dependencies and build
+RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
+    rosdep install --from-paths src --ignore-src -r -y && \
+    colcon build --symlink-install
+
+# Include variant-specific configuration
+COPY variants/${VARIANT}/config/ /ros_ws/config/
+
+# Source workspace on container start
+RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /etc/bash.bashrc && \
+    echo "source /ros_ws/install/local_setup.bash" >> /etc/bash.bashrc
+
+CMD ["bash"]
