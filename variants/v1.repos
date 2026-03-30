@@ -1,0 +1,20 @@
+# v1 Hardware Variant: LiDAR + RGB camera + supersonic sensors
+# 7 robots in the fleet run this configuration
+repositories:
+  src/assignment_example_pkg:
+    type: git
+    url: https://github.com/calebjakemossey/assignment_example_pkg.git
+    version: v1.0.0
+  src/assignment_example_ros_pkg:
+    type: git
+    url: https://github.com/calebjakemossey/assignment_example_ros_pkg.git
+    version: v1.0.0
+  # Future v1-specific packages:
+  # src/lidar_perception:
+  #   type: git
+  #   url: https://github.com/org/lidar_perception.git
+  #   version: v1.0.0
+  # src/supersonic_driver:
+  #   type: git
+  #   url: https://github.com/org/supersonic_driver.git
+  #   version: v1.0.0
