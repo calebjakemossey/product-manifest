@@ -21,22 +21,36 @@ No workflow changes are needed. Variant discovery is automatic.
 
 ## Cutting a Product Release
 
-1. Ensure all desired version bumps have been merged to `main`
-2. Tag the commit: `git tag v<major>.<minor>.<patch>`
-3. Push the tag: `git push origin v<major>.<minor>.<patch>`
-4. The release workflow builds deployment images for all variants and pushes them to GHCR
+All releases are tag-driven. There is no manual dispatch.
 
-Images are tagged as `robot-software:<version>-<variant>` (e.g. `robot-software:v1.2.0-v1`).
+### Full Release (All Variants)
+
+1. Ensure all desired version bumps have been merged to `main`
+2. Tag the commit: `git tag v2.1.0`
+3. Push the tag: `git push origin v2.1.0`
+4. The release workflow builds deployment images for **all** variants and pushes them to GHCR
+
+Images are tagged as `robot-software:<version>-<variant>` (e.g. `robot-software:v2.1.0-v1`).
 
 ### Selective Variant Release
 
-To release only specific variants without rebuilding everything:
+To release only a single variant, append the variant name as a tag suffix:
 
 ```bash
-gh workflow run release.yaml --field version=v2.1.0 --field variants=v1
+git tag v2.1.0-v1 && git push origin v2.1.0-v1   # releases only v1
+git tag v2.1.0-v2 && git push origin v2.1.0-v2   # releases only v2
 ```
 
-Comma-separate multiple variants: `--field variants=v1,v2`
+The workflow parses the tag suffix to determine which variant to build. A tag without a suffix (e.g. `v2.1.0`) builds all variants.
+
+### Re-pushing a Tag
+
+Re-pushing a tag overwrites the existing image(s) in GHCR:
+
+```bash
+git tag -d v2.1.0 && git push origin :refs/tags/v2.1.0
+git tag v2.1.0 && git push origin v2.1.0
+```
 
 ## CI Validation
 

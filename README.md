@@ -21,7 +21,6 @@ flowchart LR
 
     subgraph Release
         TAG[Tag v*]
-        MANUAL[Manual Dispatch]
         IMG1[v1 Image]
         IMG2[v2 Image]
         GHCR[GHCR]
@@ -33,8 +32,6 @@ flowchart LR
     T2 --> TAG
     TAG --> IMG1 --> GHCR
     TAG --> IMG2 --> GHCR
-    MANUAL --> IMG1
-    MANUAL --> IMG2
 ```
 
 ## How It Works
@@ -43,9 +40,13 @@ flowchart LR
 
 **Pull requests** that bump package versions trigger CI, which builds and tests the full workspace for every variant. The build matrix is discovered automatically from directories containing `manifest.repos` - adding a new variant directory is all that is needed to include it in validation.
 
-**Tagging** the manifest (e.g. `v1.0.0`) triggers the release workflow, which builds a Docker image for each variant and pushes it to GHCR. These images are the deployment artefacts consumed by the fleet.
+**Tagging** the manifest triggers the release workflow, which parses the tag to determine what to build:
 
-**Selective release** is also supported via manual workflow dispatch. This allows building specific variants without rebuilding the entire product - useful when only one variant needs updating.
+- `v2.1.0` - builds and pushes deployment images for **all** variants
+- `v2.1.0-v1` - builds and pushes only the **v1** variant image
+- `v2.1.0-v2` - builds and pushes only the **v2** variant image
+
+Re-pushing a tag (delete and re-create) overwrites the corresponding image(s) in GHCR. There is no manual dispatch - all releases are driven by tags.
 
 ## Asynchronous Development
 
@@ -81,19 +82,30 @@ Each variant is a self-contained directory. Adding a new variant means creating 
 1. Open a PR bumping package versions in the relevant `manifest.repos` files
 2. CI validates the build for all affected variants
 3. Merge the PR
-4. Tag the merge commit: `git tag v1.2.0 && git push origin v1.2.0`
-5. The release workflow builds and pushes deployment images for all variants to GHCR
+4. Tag the merge commit: `git tag v2.1.0 && git push origin v2.1.0`
+5. The release workflow builds and pushes deployment images for **all** variants to GHCR
 
 ### Selective Variant Release
 
-To release only specific variants without rebuilding the entire product:
+To release only a single variant, append the variant name as a tag suffix:
 
 ```bash
-gh workflow run release.yaml --field version=v2.1.0 --field variants=v1
-gh workflow run release.yaml --field version=v2.1.0 --field variants=v1,v2
+git tag v2.1.0-v1 && git push origin v2.1.0-v1   # releases only v1
+git tag v2.1.0-v2 && git push origin v2.1.0-v2   # releases only v2
 ```
 
 This is useful when a change only affects one hardware configuration and you want to avoid rebuilding unrelated variants.
+
+### Re-pushing a Tag
+
+If a release needs to be rebuilt (e.g. after a hotfix to the release workflow), delete and re-push the tag:
+
+```bash
+git tag -d v2.1.0 && git push origin :refs/tags/v2.1.0
+git tag v2.1.0 && git push origin v2.1.0
+```
+
+This overwrites the existing image(s) in GHCR.
 
 ## Contributing
 
