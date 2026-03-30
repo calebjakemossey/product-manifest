@@ -126,15 +126,7 @@ jobs:
               echo ""
             done
 
-            echo "## What's Changed"
           } > /tmp/release-body.md
-
-          # Store as output using delimiter to handle multiline
-          {
-            echo "body<<RELEASE_EOF"
-            cat /tmp/release-body.md
-            echo "RELEASE_EOF"
-          } >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         env:
@@ -142,5 +134,5 @@ jobs:
         run: |
           gh release create "${{ github.ref_name }}" \
             --title "${{ needs.parse-tag.outputs.version }}" \
-            --notes "${{ steps.notes.outputs.body }}" \
+            --notes-file /tmp/release-body.md \
             --generate-notes
