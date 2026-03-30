@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  discover-variants:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      variants: ${{ steps.find.outputs.variants }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Discover variants
+        id: find
+        run: |
+          variants=$(ls variants/*.repos | sed 's|variants/||;s|\.repos||' | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          echo "variants=$variants" >> $GITHUB_OUTPUT
+
+  build-variant:
+    needs: [discover-variants]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        variant: ${{ fromJson(needs.discover-variants.outputs.variants) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.release
+          push: true
+          build-args: |
+            ROS_DISTRO=humble
+            VARIANT=${{ matrix.variant }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/robot-software:${{ steps.version.outputs.version }}-${{ matrix.variant }}
+            ghcr.io/${{ github.repository_owner }}/robot-software:latest-${{ matrix.variant }}
+          cache-from: type=gha,scope=${{ matrix.variant }}
+          cache-to: type=gha,scope=${{ matrix.variant }},mode=max
