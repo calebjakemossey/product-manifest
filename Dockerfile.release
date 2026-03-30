@@ -18,7 +18,7 @@ RUN rosdep init || true && rosdep update
 WORKDIR /ros_ws
 
 # Copy the variant manifest and clone all packages
-COPY variants/${VARIANT}.repos manifest.repos
+COPY variants/${VARIANT}/manifest.repos manifest.repos
 RUN vcs import src < manifest.repos
 
 # Install system dependencies and build

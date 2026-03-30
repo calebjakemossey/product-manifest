@@ -2,7 +2,7 @@
 
 ## Bumping a Package Version
 
-1. Edit the relevant `.repos` file(s) in `variants/` to update the `version` field
+1. Edit the relevant `manifest.repos` file(s) in `variants/<name>/` to update the `version` field
 2. Open a pull request targeting `main`
 3. CI will build and test the full workspace for each affected variant
 4. Once CI passes, merge the PR
@@ -11,9 +11,11 @@ Only bump versions that have been tested and released in their own package repos
 
 ## Adding a New Hardware Variant
 
-1. Create a new `variants/<name>.repos` file listing the packages and versions for the variant
-2. Create a `variants/<name>/config/` directory for variant-specific configuration
-3. Open a PR - CI will automatically discover the new variant and include it in the build matrix
+1. Create a new `variants/<name>/` directory
+2. Add a `manifest.repos` file listing the packages and versions for the variant
+3. Add a `config/` directory for variant-specific configuration
+4. Add a `README.md` documenting the variant's fleet size, sensors, and release instructions
+5. Open a PR - CI will automatically discover the new variant and include it in the build matrix
 
 No workflow changes are needed. Variant discovery is automatic.
 
@@ -22,15 +24,25 @@ No workflow changes are needed. Variant discovery is automatic.
 1. Ensure all desired version bumps have been merged to `main`
 2. Tag the commit: `git tag v<major>.<minor>.<patch>`
 3. Push the tag: `git push origin v<major>.<minor>.<patch>`
-4. The release workflow builds deployment images for each variant and pushes them to GHCR
+4. The release workflow builds deployment images for all variants and pushes them to GHCR
 
 Images are tagged as `robot-software:<version>-<variant>` (e.g. `robot-software:v1.2.0-v1`).
+
+### Selective Variant Release
+
+To release only specific variants without rebuilding everything:
+
+```bash
+gh workflow run release.yaml --field version=v2.1.0 --field variants=v1
+```
+
+Comma-separate multiple variants: `--field variants=v1,v2`
 
 ## CI Validation
 
 Every PR triggers the validation workflow, which:
 
-1. Discovers all variants from `variants/*.repos`
+1. Discovers all variants from `variants/*/manifest.repos`
 2. For each variant: clones packages at the manifest-specified versions
 3. Builds the full workspace with colcon
 4. Runs all package tests
