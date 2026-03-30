@@ -1,0 +1,16 @@
+# v2 Hardware Variant: Depth camera + RGB camera
+# 3 robots in the fleet run this configuration
+repositories:
+  src/assignment_example_pkg:
+    type: git
+    url: https://github.com/calebjakemossey/assignment_example_pkg.git
+    version: v1.0.0
+  src/assignment_example_ros_pkg:
+    type: git
+    url: https://github.com/calebjakemossey/assignment_example_ros_pkg.git
+    version: v1.0.0
+  # Future v2-specific packages:
+  # src/depth_perception:
+  #   type: git
+  #   url: https://github.com/org/depth_perception.git
+  #   version: v1.0.0
