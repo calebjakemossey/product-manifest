@@ -25,7 +25,7 @@ jobs:
       - name: Discover variants
         id: find
         run: |
-          variants=$(ls variants/*.repos | sed 's|variants/||;s|\.repos||' | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          variants=$(ls variants/*/manifest.repos | sed 's|variants/||;s|/manifest.repos||' | jq -R -s -c 'split("\n") | map(select(. != ""))')
           echo "variants=$variants" >> $GITHUB_OUTPUT
           echo "Found variants: $variants"
 
@@ -49,7 +49,7 @@ jobs:
         run: |
           mkdir -p /ros_ws/src
           cd /ros_ws
-          vcs import src < $GITHUB_WORKSPACE/variants/${{ matrix.variant }}.repos
+          vcs import src < $GITHUB_WORKSPACE/variants/${{ matrix.variant }}/manifest.repos
 
       - name: Install system dependencies
         run: |
